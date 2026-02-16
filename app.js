@@ -11,6 +11,7 @@ const state = {
   lastFace: null,
   lastTime: 0,
 };
+const audioUnlockEvents = ["pointerdown", "touchstart", "keydown"];
 
 function formatTime(date) {
   const hh = String(date.getHours()).padStart(2, "0");
@@ -180,34 +181,35 @@ async function renderFrame(now) {
 }
 
 async function tryAutoplay() {
+  if (!audio || !audio.src) return;
+
+  audio.preload = "auto";
+  audio.load();
+
   try {
-    if (audio && audio.src) {
-      audio.muted = true;
-      await audio.play();
-      const unmute = () => {
-        audio.muted = false;
-        window.removeEventListener("pointerdown", unmute);
-        window.removeEventListener("touchstart", unmute);
-      };
-      window.addEventListener("pointerdown", unmute, { once: true });
-      window.addEventListener("touchstart", unmute, { once: true });
-    }
+    audio.muted = false;
+    await audio.play();
+    return;
   } catch (err) {
-    const unlock = async () => {
-      try {
-        await audio.play();
-      } catch (e) {
-        // ignore
-      }
-      window.removeEventListener("pointerdown", unlock);
-      window.removeEventListener("touchstart", unlock);
-    };
-    window.addEventListener("pointerdown", unlock, { once: true });
-    window.addEventListener("touchstart", unlock, { once: true });
+    // Browser requires user gesture before playing audio with sound.
+  }
+
+  const unlock = async () => {
+    audio.muted = false;
+    try {
+      await audio.play();
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  for (const eventName of audioUnlockEvents) {
+    window.addEventListener(eventName, unlock, { once: true, passive: true });
   }
 }
 
 async function init() {
+  tryAutoplay();
   await startCamera();
   state.running = true;
   requestAnimationFrame(renderFrame);
@@ -216,7 +218,6 @@ async function init() {
   } catch (err) {
     console.warn("Face Landmarker init failed:", err);
   }
-  tryAutoplay();
 }
 
 init().catch((err) => {
