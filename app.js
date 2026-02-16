@@ -1,0 +1,193 @@
+const video = document.getElementById("camera");
+const canvas = document.getElementById("mask");
+const ctx = canvas.getContext("2d");
+const timeNow = document.getElementById("timeNow");
+const dateNow = document.getElementById("dateNow");
+const audio = document.getElementById("bgAudio");
+
+const state = {
+  landmarker: null,
+  running: false,
+  lastFace: null,
+  lastTime: 0,
+};
+
+function formatTime(date) {
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+function formatDate(date) {
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yy = String(date.getFullYear()).slice(-2);
+  return `${dd}/${mm}/${yy}`;
+}
+
+function updateClock() {
+  const now = new Date();
+  timeNow.textContent = formatTime(now);
+  dateNow.textContent = formatDate(now);
+}
+
+updateClock();
+setInterval(updateClock, 60 * 1000);
+
+function resizeCanvas() {
+  const { videoWidth, videoHeight } = video;
+  if (videoWidth && videoHeight) {
+    canvas.width = videoWidth;
+    canvas.height = videoHeight;
+  }
+}
+
+window.addEventListener("resize", () => {
+  resizeCanvas();
+});
+
+async function startCamera() {
+  const constraints = {
+    audio: false,
+    video: {
+      facingMode: { ideal: "user" },
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+    },
+  };
+
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  video.srcObject = stream;
+
+  await new Promise((resolve) => {
+    video.onloadedmetadata = () => resolve();
+  });
+
+  resizeCanvas();
+}
+
+async function initLandmarker() {
+  if (!window.vision) {
+    throw new Error("MediaPipe Vision не загрузился");
+  }
+
+  const filesetResolver = await vision.FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+  );
+
+  state.landmarker = await vision.FaceLandmarker.createFromOptions(filesetResolver, {
+    baseOptions: {
+      modelAssetPath:
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm/face_landmarker.task",
+    },
+    runningMode: "VIDEO",
+    numFaces: 1,
+  });
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function drawMask(face) {
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  ctx.save();
+  ctx.fillStyle = "rgba(90, 10, 16, 0.75)";
+  ctx.fillRect(0, 0, w, h);
+
+  if (face) {
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.beginPath();
+    ctx.ellipse(face.x, face.y, face.r * 1.1, face.r * 1.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function computeFace(landmarks) {
+  let minX = 1;
+  let minY = 1;
+  let maxX = 0;
+  let maxY = 0;
+
+  for (const lm of landmarks) {
+    if (lm.x < minX) minX = lm.x;
+    if (lm.y < minY) minY = lm.y;
+    if (lm.x > maxX) maxX = lm.x;
+    if (lm.y > maxY) maxY = lm.y;
+  }
+
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const radius = Math.max(maxX - minX, maxY - minY) / 2;
+
+  return {
+    x: cx * canvas.width,
+    y: cy * canvas.height,
+    r: radius * Math.max(canvas.width, canvas.height),
+  };
+}
+
+async function renderFrame(now) {
+  if (!state.running) return;
+
+  if (video.readyState >= 2 && state.landmarker) {
+    const result = await state.landmarker.detectForVideo(video, now);
+    const landmarks = result.faceLandmarks?.[0];
+
+    if (landmarks) {
+      const nextFace = computeFace(landmarks);
+      if (!state.lastFace) {
+        state.lastFace = nextFace;
+      } else {
+        state.lastFace = {
+          x: lerp(state.lastFace.x, nextFace.x, 0.15),
+          y: lerp(state.lastFace.y, nextFace.y, 0.15),
+          r: lerp(state.lastFace.r, nextFace.r, 0.15),
+        };
+      }
+    } else {
+      state.lastFace = null;
+    }
+
+    drawMask(state.lastFace);
+  }
+
+  requestAnimationFrame(renderFrame);
+}
+
+async function tryAutoplay() {
+  try {
+    if (audio && audio.src) {
+      await audio.play();
+    }
+  } catch (err) {
+    const unlock = async () => {
+      try {
+        await audio.play();
+      } catch (e) {
+        // ignore
+      }
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("touchstart", unlock);
+    };
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("touchstart", unlock, { once: true });
+  }
+}
+
+async function init() {
+  await startCamera();
+  await initLandmarker();
+  state.running = true;
+  requestAnimationFrame(renderFrame);
+  tryAutoplay();
+}
+
+init().catch((err) => {
+  console.error(err);
+});
