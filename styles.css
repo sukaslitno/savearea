@@ -204,6 +204,7 @@ body {
   }
 
   .ui__panel {
+    width: calc(100vw - 32px);
     padding: 12px 0;
   }
 
