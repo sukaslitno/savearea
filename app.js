@@ -3,6 +3,9 @@ const canvas = document.getElementById("mask");
 const ctx = canvas.getContext("2d");
 const timeNodes = document.querySelectorAll(".js-time");
 const dateNodes = document.querySelectorAll(".js-date");
+const panelsWrap = document.querySelector(".ui__panels");
+const panelNodes = document.querySelectorAll(".ui__panel");
+const centerMessage = document.getElementById("centerMessage");
 const audio = document.getElementById("bgAudio");
 
 const state = {
@@ -10,8 +13,10 @@ const state = {
   running: false,
   lastFace: null,
   lastTime: 0,
+  uiTransitionActive: false,
 };
 const audioUnlockEvents = ["pointerdown", "touchstart", "keydown"];
+const panelCooldownMs = 15000;
 
 function formatTime(date) {
   const hh = String(date.getHours()).padStart(2, "0");
@@ -40,6 +45,29 @@ function updateClock() {
 
 updateClock();
 setInterval(updateClock, 60 * 1000);
+
+function activatePanelSequence(panel) {
+  if (!panelsWrap || !centerMessage || state.uiTransitionActive) return;
+
+  state.uiTransitionActive = true;
+  panelsWrap.classList.add("is-hidden");
+  centerMessage.classList.add("is-visible");
+  centerMessage.setAttribute("aria-hidden", "false");
+
+  window.setTimeout(() => {
+    centerMessage.classList.remove("is-visible");
+    centerMessage.setAttribute("aria-hidden", "true");
+    panelsWrap.classList.remove("is-hidden");
+    panel.classList.add("is-hidden");
+    state.uiTransitionActive = false;
+  }, panelCooldownMs);
+}
+
+panelNodes.forEach((panel) => {
+  panel.addEventListener("click", () => {
+    activatePanelSequence(panel);
+  });
+});
 
 function resizeCanvas() {
   const width = video.clientWidth || video.videoWidth;

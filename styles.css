@@ -76,6 +76,10 @@ body {
   gap: 16px;
 }
 
+.ui__panels.is-hidden {
+  display: none;
+}
+
 .ui__panel {
   position: relative;
   padding: 16px 0;
@@ -94,6 +98,10 @@ body {
   color: inherit;
   transform-origin: left center;
   transition: transform 180ms ease, filter 180ms ease;
+}
+
+.ui__panel.is-hidden {
+  display: none;
 }
 
 .ui__panel:hover {
@@ -173,6 +181,25 @@ body {
 .panel__date {
   font-size: 16px;
   color: rgba(255, 255, 255, 0.4);
+}
+
+.center-message {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  font-size: clamp(30px, 3vw, 56px);
+  line-height: 1.2;
+  color: #ffffff;
+  text-align: center;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.center-message.is-visible {
+  display: flex;
 }
 
 @media (max-width: 1279px) {
