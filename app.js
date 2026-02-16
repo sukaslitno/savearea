@@ -1,8 +1,8 @@
 const video = document.getElementById("camera");
 const canvas = document.getElementById("mask");
 const ctx = canvas.getContext("2d");
-const timeNow = document.getElementById("timeNow");
-const dateNow = document.getElementById("dateNow");
+const timeNodes = document.querySelectorAll(".js-time");
+const dateNodes = document.querySelectorAll(".js-date");
 const audio = document.getElementById("bgAudio");
 
 const state = {
@@ -28,8 +28,14 @@ function formatDate(date) {
 
 function updateClock() {
   const now = new Date();
-  timeNow.textContent = formatTime(now);
-  dateNow.textContent = formatDate(now);
+  const timeText = formatTime(now);
+  const dateText = formatDate(now);
+  timeNodes.forEach((node) => {
+    node.textContent = timeText;
+  });
+  dateNodes.forEach((node) => {
+    node.textContent = dateText;
+  });
 }
 
 updateClock();
