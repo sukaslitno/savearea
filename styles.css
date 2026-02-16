@@ -220,9 +220,17 @@ body {
   z-index: 5;
 }
 
+.center-message__text {
+  display: inline-block;
+}
+
 .center-message.is-visible {
   opacity: 1;
   visibility: visible;
+}
+
+.center-message.is-visible .center-message__text {
+  animation: message-pulse 1s ease-in-out infinite;
 }
 
 .white-static {
@@ -280,6 +288,21 @@ body {
   100% {
     transform: translate3d(0, 0, 0);
     filter: contrast(100%);
+  }
+}
+
+@keyframes message-pulse {
+  0% {
+    opacity: 0.72;
+    transform: scale(0.996);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.004);
+  }
+  100% {
+    opacity: 0.72;
+    transform: scale(0.996);
   }
 }
 

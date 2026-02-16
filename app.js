@@ -5,9 +5,11 @@ const timeNodes = document.querySelectorAll(".js-time");
 const dateNodes = document.querySelectorAll(".js-date");
 const ui = document.querySelector(".ui");
 const uiHeader = document.querySelector(".ui__header");
+const titleNode = document.querySelector(".title");
 const panelsWrap = document.querySelector(".ui__panels");
 const panelNodes = document.querySelectorAll(".ui__panel");
 const centerMessage = document.getElementById("centerMessage");
+const centerMessageText = centerMessage?.querySelector(".center-message__text");
 const whiteStatic = document.getElementById("whiteStatic");
 const audio = document.getElementById("bgAudio");
 
@@ -19,11 +21,63 @@ const state = {
   uiTransitionActive: false,
   hiddenPanelIds: new Set(),
 };
+const panelSafePlace = document.querySelector('[data-panel-id="safe-place"]');
+const panelBoost = document.querySelector('[data-panel-id="boost"]');
+const panelSafePlaceLabel = panelSafePlace?.querySelector(".panel__label");
+const panelSafePlaceSubtitle = panelSafePlace?.querySelector(".panel__list li");
+const panelBoostLabel = panelBoost?.querySelector(".panel__label");
+const panelBoostSubtitle = panelBoost?.querySelector(".panel__list li");
 const audioUnlockEvents = ["pointerdown", "touchstart", "keydown"];
-const panelCooldownMs = 15000;
+const panelCooldownMs = 8000;
 const fadeDurationMs = 1000;
-const waitMessageText = "||...твои пальцы пахнут ржавчиной и старой бумагой...||";
-const finalMessageText = "«Это просто кусок красной бумаги... но почему от него так веет холодом?»";
+const cisRegionCodes = new Set(["AM", "AZ", "BY", "KZ", "KG", "MD", "TJ", "TM", "UZ", "UA", "GE"]);
+
+function resolveRegionCode() {
+  const localeTag =
+    navigator.languages?.[0] || navigator.language || Intl.DateTimeFormat().resolvedOptions().locale || "";
+  try {
+    if (window.Intl?.Locale) {
+      const region = new Intl.Locale(localeTag).region;
+      if (region) return region.toUpperCase();
+    }
+  } catch (err) {
+    // ignore and fallback to regex parsing
+  }
+  const match = localeTag.match(/[-_]([a-z]{2})\b/i);
+  return match ? match[1].toUpperCase() : "";
+}
+
+const regionCode = resolveRegionCode();
+const useRuLocale = regionCode === "RU" || cisRegionCodes.has(regionCode);
+const copy = useRuLocale
+  ? {
+      title: "СОХРАНИТЬ МОМЕНТ",
+      safePlaceLabel: "ПУТЬ В БЕЗОПАСНОЕ МЕСТО",
+      safePlaceSubtitle: "Алое безмолвие",
+      boostLabel: "СДЕЛАТЬ МЕСТО КРЕПЧЕ",
+      boostSubtitle: "Дополнительный круг",
+      waitMessage: "||...твои пальцы пахнут ржавчиной и старой бумагой...||",
+      finalMessage: "«Это просто кусок красной бумаги... но почему от него так веет холодом?»",
+    }
+  : {
+      title: "SAVE THIS MOMENT",
+      safePlaceLabel: "THE WAY TO A SAFE PLACE",
+      safePlaceSubtitle: "Crimson Silence",
+      boostLabel: "MAKE THIS PLACE STRONGER",
+      boostSubtitle: "Additional Ring",
+      waitMessage: "||...your fingers smell of rust and old paper...||",
+      finalMessage: "“It is only a scrap of red paper... so why does it breathe such a chill?”",
+    };
+const waitMessageText = copy.waitMessage;
+const finalMessageText = copy.finalMessage;
+
+function applyLocalizedCopy() {
+  if (titleNode) titleNode.textContent = copy.title;
+  if (panelSafePlaceLabel) panelSafePlaceLabel.textContent = copy.safePlaceLabel;
+  if (panelSafePlaceSubtitle) panelSafePlaceSubtitle.textContent = copy.safePlaceSubtitle;
+  if (panelBoostLabel) panelBoostLabel.textContent = copy.boostLabel;
+  if (panelBoostSubtitle) panelBoostSubtitle.textContent = copy.boostSubtitle;
+}
 
 function formatTime(date) {
   const hh = String(date.getHours()).padStart(2, "0");
@@ -52,10 +106,11 @@ function updateClock() {
 
 updateClock();
 setInterval(updateClock, 60 * 1000);
+applyLocalizedCopy();
 
 function showCenterMessage(text) {
-  if (!centerMessage) return;
-  centerMessage.textContent = text;
+  if (!centerMessage || !centerMessageText) return;
+  centerMessageText.textContent = text;
   centerMessage.classList.add("is-visible");
   centerMessage.setAttribute("aria-hidden", "false");
 }
