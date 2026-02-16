@@ -70,7 +70,7 @@ const copy = useRuLocale
     };
 const waitMessageText = copy.waitMessage;
 const finalMessageText = copy.finalMessage;
-const safePlaceRandomMessages = [
+const safePlaceRandomMessagesRu = [
   "||...пульсация под кожей затихает, но гул в ушах остается...||",
   "||...ты чувствуешь, как алое пятно впитывает тепло твоих ладоней...||",
   "||...в воздухе плывет отчетливый запах железа и сырой земли...||",
@@ -87,6 +87,24 @@ const safePlaceRandomMessages = [
   "||...жжение в висках - это цена за возможность остаться собой...||",
   "||...ты оставил здесь часть себя, теперь ты стал чуть легче...||",
 ];
+const safePlaceRandomMessagesEn = [
+  "||...the pulse beneath your skin fades, but the hum in your ears remains...||",
+  "||...you feel the crimson stain drinking in the warmth of your palms...||",
+  "||...the air carries a sharp scent of iron and wet earth...||",
+  "||...your reflection on the other side has frozen, waiting...||",
+  "||...the sheet seems to breathe in time with your frightened heart...||",
+  "||...a split-second sting of pain, and the world sharpens again...||",
+  "||...the paint on your fingers is still tacky, still warm...||",
+  "||...someone beyond the screen has just touched your shadow...||",
+  "||...for a moment, the ringing in your skull turns into distant children's laughter...||",
+  "||...the paper feels like an old, dried bandage...||",
+  "||...do not turn around until the crimson glow is completely gone...||",
+  "||...your name is written there now, where there is no way back...||",
+  "||...this is not paper, it is a window, and someone outside is watching you...||",
+  "||...the burning in your temples is the price of remaining yourself...||",
+  "||...you left a part of yourself here, and now you are a little lighter...||",
+];
+const safePlaceRandomMessages = useRuLocale ? safePlaceRandomMessagesRu : safePlaceRandomMessagesEn;
 
 function getRandomSafePlaceMessage() {
   if (!safePlaceRandomMessages.length) return waitMessageText;
