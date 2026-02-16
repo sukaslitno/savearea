@@ -8,6 +8,7 @@ const uiHeader = document.querySelector(".ui__header");
 const panelsWrap = document.querySelector(".ui__panels");
 const panelNodes = document.querySelectorAll(".ui__panel");
 const centerMessage = document.getElementById("centerMessage");
+const whiteStatic = document.getElementById("whiteStatic");
 const audio = document.getElementById("bgAudio");
 
 const state = {
@@ -68,6 +69,9 @@ function hideCenterMessage() {
 function enterFinalState() {
   if (!ui || !centerMessage) return;
   ui.classList.add("is-final-state");
+  if (whiteStatic) {
+    whiteStatic.classList.add("is-visible");
+  }
   showCenterMessage(finalMessageText);
 }
 
@@ -91,6 +95,13 @@ function finalizeClickedPanel(panel) {
 function activatePanelSequence(panel) {
   if (!ui || !panelsWrap || !uiHeader || !centerMessage || state.uiTransitionActive) return;
   if (panel.classList.contains("is-hidden")) return;
+
+  const visiblePanels = Array.from(panelNodes).filter((node) => !node.classList.contains("is-hidden"));
+  if (visiblePanels.length === 1 && visiblePanels[0] === panel) {
+    state.hiddenPanelIds.add(panel.dataset.panelId || panel.href);
+    enterFinalState();
+    return;
+  }
 
   state.uiTransitionActive = true;
   ui.classList.add("is-overlay-active");
