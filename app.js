@@ -95,7 +95,12 @@ function drawMask(face) {
   ctx.clearRect(0, 0, w, h);
 
   ctx.save();
-  ctx.fillStyle = "rgba(90, 10, 16, 0.75)";
+  ctx.globalCompositeOperation = "source-over";
+  const gradient = ctx.createRadialGradient(w * 0.6, h * 0.5, w * 0.1, w * 0.5, h * 0.5, w * 0.8);
+  gradient.addColorStop(0, "rgba(140, 20, 32, 0.7)");
+  gradient.addColorStop(0.6, "rgba(80, 12, 20, 0.65)");
+  gradient.addColorStop(1, "rgba(40, 6, 12, 0.9)");
+  ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, w, h);
 
   if (face) {
