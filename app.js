@@ -70,6 +70,29 @@ const copy = useRuLocale
     };
 const waitMessageText = copy.waitMessage;
 const finalMessageText = copy.finalMessage;
+const safePlaceRandomMessages = [
+  "||...пульсация под кожей затихает, но гул в ушах остается...||",
+  "||...ты чувствуешь, как алое пятно впитывает тепло твоих ладоней...||",
+  "||...в воздухе плывет отчетливый запах железа и сырой земли...||",
+  "||...твое отражение на той стороне замерло в ожидании...||",
+  "||...кажется, лист бумаги дышит в такт твоему испуганному сердцу...||",
+  "||...секундная вспышка боли - и мир снова обретает четкость...||",
+  "||...краска на твоих пальцах еще не высохла, она липкая и теплая...||",
+  "||...кто-то по ту сторону экрана только что коснулся твоей тени...||",
+  "||...звон в голове на мгновение сменяется далеким детским смехом...||",
+  "||...текстура бумаги напоминает старый, высохший бинт...||",
+  "||...не оборачивайся, пока алое свечение не погаснет полностью...||",
+  "||...твое имя теперь вписано туда, откуда нет возврата...||",
+  "||...это не бумага, это окно, и кто-то снаружи смотрит на тебя...||",
+  "||...жжение в висках - это цена за возможность остаться собой...||",
+  "||...ты оставил здесь часть себя, теперь ты стал чуть легче...||",
+];
+
+function getRandomSafePlaceMessage() {
+  if (!safePlaceRandomMessages.length) return waitMessageText;
+  const index = Math.floor(Math.random() * safePlaceRandomMessages.length);
+  return safePlaceRandomMessages[index];
+}
 
 function applyLocalizedCopy() {
   if (titleNode) titleNode.textContent = copy.title;
@@ -160,7 +183,9 @@ function activatePanelSequence(panel) {
 
   state.uiTransitionActive = true;
   ui.classList.add("is-overlay-active");
-  showCenterMessage(waitMessageText);
+  const isSafePlacePanel = panel.dataset.panelId === "safe-place";
+  const messageText = isSafePlacePanel ? getRandomSafePlaceMessage() : waitMessageText;
+  showCenterMessage(messageText);
 
   window.setTimeout(() => {
     ui.classList.remove("is-overlay-active");
