@@ -3,6 +3,8 @@ const canvas = document.getElementById("mask");
 const ctx = canvas.getContext("2d");
 const timeNodes = document.querySelectorAll(".js-time");
 const dateNodes = document.querySelectorAll(".js-date");
+const ui = document.querySelector(".ui");
+const uiHeader = document.querySelector(".ui__header");
 const panelsWrap = document.querySelector(".ui__panels");
 const panelNodes = document.querySelectorAll(".ui__panel");
 const centerMessage = document.getElementById("centerMessage");
@@ -14,9 +16,13 @@ const state = {
   lastFace: null,
   lastTime: 0,
   uiTransitionActive: false,
+  hiddenPanelIds: new Set(),
 };
 const audioUnlockEvents = ["pointerdown", "touchstart", "keydown"];
 const panelCooldownMs = 15000;
+const fadeDurationMs = 1000;
+const waitMessageText = "||...твои пальцы пахнут ржавчиной и старой бумагой...||";
+const finalMessageText = "«Это просто кусок красной бумаги... но почему от него так веет холодом?»";
 
 function formatTime(date) {
   const hh = String(date.getHours()).padStart(2, "0");
@@ -46,25 +52,65 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 60 * 1000);
 
-function activatePanelSequence(panel) {
-  if (!panelsWrap || !centerMessage || state.uiTransitionActive) return;
-
-  state.uiTransitionActive = true;
-  panelsWrap.classList.add("is-hidden");
+function showCenterMessage(text) {
+  if (!centerMessage) return;
+  centerMessage.textContent = text;
   centerMessage.classList.add("is-visible");
   centerMessage.setAttribute("aria-hidden", "false");
+}
+
+function hideCenterMessage() {
+  if (!centerMessage) return;
+  centerMessage.classList.remove("is-visible");
+  centerMessage.setAttribute("aria-hidden", "true");
+}
+
+function enterFinalState() {
+  if (!ui || !centerMessage) return;
+  ui.classList.add("is-final-state");
+  showCenterMessage(finalMessageText);
+}
+
+function finalizeClickedPanel(panel) {
+  panel.classList.add("is-snapping");
+  panel.addEventListener(
+    "animationend",
+    () => {
+      panel.classList.remove("is-snapping");
+      panel.classList.add("is-hidden");
+      state.hiddenPanelIds.add(panel.dataset.panelId || panel.href);
+      if (state.hiddenPanelIds.size === panelNodes.length) {
+        enterFinalState();
+      }
+      state.uiTransitionActive = false;
+    },
+    { once: true }
+  );
+}
+
+function activatePanelSequence(panel) {
+  if (!ui || !panelsWrap || !uiHeader || !centerMessage || state.uiTransitionActive) return;
+  if (panel.classList.contains("is-hidden")) return;
+
+  state.uiTransitionActive = true;
+  ui.classList.add("is-overlay-active");
+  showCenterMessage(waitMessageText);
 
   window.setTimeout(() => {
-    centerMessage.classList.remove("is-visible");
-    centerMessage.setAttribute("aria-hidden", "true");
-    panelsWrap.classList.remove("is-hidden");
-    panel.classList.add("is-hidden");
-    state.uiTransitionActive = false;
+    ui.classList.remove("is-overlay-active");
+    hideCenterMessage();
+    window.setTimeout(() => {
+      finalizeClickedPanel(panel);
+    }, fadeDurationMs);
   }, panelCooldownMs);
 }
 
 panelNodes.forEach((panel) => {
-  panel.addEventListener("click", () => {
+  panel.addEventListener("click", (event) => {
+    if (state.uiTransitionActive) {
+      event.preventDefault();
+      return;
+    }
     activatePanelSequence(panel);
   });
 });
