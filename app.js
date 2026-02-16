@@ -35,10 +35,11 @@ updateClock();
 setInterval(updateClock, 60 * 1000);
 
 function resizeCanvas() {
-  const { videoWidth, videoHeight } = video;
-  if (videoWidth && videoHeight) {
-    canvas.width = videoWidth;
-    canvas.height = videoHeight;
+  const width = video.clientWidth || video.videoWidth;
+  const height = video.clientHeight || video.videoHeight;
+  if (width && height) {
+    canvas.width = width;
+    canvas.height = height;
   }
 }
 
@@ -158,17 +159,24 @@ async function renderFrame(now) {
     } else {
       state.lastFace = null;
     }
-
-    drawMask(state.lastFace);
   }
 
+  drawMask(state.lastFace);
   requestAnimationFrame(renderFrame);
 }
 
 async function tryAutoplay() {
   try {
     if (audio && audio.src) {
+      audio.muted = true;
       await audio.play();
+      const unmute = () => {
+        audio.muted = false;
+        window.removeEventListener("pointerdown", unmute);
+        window.removeEventListener("touchstart", unmute);
+      };
+      window.addEventListener("pointerdown", unmute, { once: true });
+      window.addEventListener("touchstart", unmute, { once: true });
     }
   } catch (err) {
     const unlock = async () => {
@@ -187,9 +195,13 @@ async function tryAutoplay() {
 
 async function init() {
   await startCamera();
-  await initLandmarker();
   state.running = true;
   requestAnimationFrame(renderFrame);
+  try {
+    await initLandmarker();
+  } catch (err) {
+    console.warn("Face Landmarker init failed:", err);
+  }
   tryAutoplay();
 }
 
