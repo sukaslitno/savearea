@@ -97,14 +97,29 @@ function drawMask(face) {
 
   ctx.save();
   ctx.globalCompositeOperation = "source-over";
-  ctx.fillStyle = "rgba(108, 0, 0, 0.88)";
+  ctx.fillStyle = "rgba(108, 0, 0, 0.6)";
+  ctx.fillRect(0, 0, w, h);
+
+  const vignette = ctx.createRadialGradient(w * 0.5, h * 0.5, w * 0.1, w * 0.5, h * 0.5, w * 0.85);
+  vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+  vignette.addColorStop(1, "rgba(0, 0, 0, 0.55)");
+  ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, w, h);
 
   if (face) {
-    ctx.globalCompositeOperation = "destination-out";
+    ctx.globalCompositeOperation = "screen";
+    ctx.save();
+    ctx.translate(face.x, face.y);
+    ctx.scale(1, face.ry / face.rx);
+    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, face.rx);
+    glow.addColorStop(0, "rgba(255, 255, 255, 0.28)");
+    glow.addColorStop(0.6, "rgba(255, 255, 255, 0.12)");
+    glow.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.ellipse(face.x, face.y, face.r * 1.1, face.r * 1.25, 0, 0, Math.PI * 2);
+    ctx.arc(0, 0, face.rx, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
   }
 
   ctx.restore();
@@ -125,12 +140,14 @@ function computeFace(landmarks) {
 
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
-  const radius = Math.max(maxX - minX, maxY - minY) / 2;
+  const boxW = maxX - minX;
+  const boxH = maxY - minY;
 
   return {
     x: cx * canvas.width,
     y: cy * canvas.height,
-    r: radius * Math.max(canvas.width, canvas.height),
+    rx: (boxW * canvas.width * 0.5) * 1.2,
+    ry: (boxH * canvas.height * 0.5) * 1.4,
   };
 }
 
@@ -147,9 +164,10 @@ async function renderFrame(now) {
         state.lastFace = nextFace;
       } else {
         state.lastFace = {
-          x: lerp(state.lastFace.x, nextFace.x, 0.15),
-          y: lerp(state.lastFace.y, nextFace.y, 0.15),
-          r: lerp(state.lastFace.r, nextFace.r, 0.15),
+          x: lerp(state.lastFace.x, nextFace.x, 0.2),
+          y: lerp(state.lastFace.y, nextFace.y, 0.2),
+          rx: lerp(state.lastFace.rx, nextFace.rx, 0.2),
+          ry: lerp(state.lastFace.ry, nextFace.ry, 0.2),
         };
       }
     } else {

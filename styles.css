@@ -43,16 +43,16 @@ body {
 }
 
 #camera {
-  z-index: 0;
+  z-index: 1;
 }
 
 #mask {
-  z-index: 1;
+  z-index: 2;
 }
 
 .ui {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   min-height: 100vh;
   padding: calc(32px + env(safe-area-inset-top))
     calc(80px + env(safe-area-inset-right))
